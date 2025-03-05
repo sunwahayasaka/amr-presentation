@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>複数台AMRによる工場自動化：戦略的導入ガイド</title>
+    <style>
+      :root {
+        --primary: #460073;
+        --primary-light: #7b00c6;
+        --accent: #00b8ff;
+        --text: #e6e6e6;
+        --text-light: #b3b3b3;
+        --background: #121212;
+        --background-light: #1e1e1e;
+        --background-card: #252525;
+        --success: #00c853;
+        --warning: #ffd600;
+        --danger: #ff3d00;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        color: var(--text);
+        background-color: var(--background);
+        line-height: 1.6;
+        overflow: hidden;
+      }
+
+      .presentation {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 2rem;
+        opacity: 0;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        transform: translateX(100px);
+        z-index: 1;
+        background-color: var(--background);
+        overflow-y: auto;
+      }
+
+      .slide.active {
+        opacity: 1;
+        transform: translateX(0);
+        z-index: 2;
+      }
+
+      .slide-content {
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .slide-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 1rem;
+      }
+
+      .slide-number {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        margin-top: 2.5rem;
+      }
+
+      .slide-title {
+        color: var(--accent);
+        margin-bottom: 1rem;
+        font-size: 2.2rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+
+      h3 {
+        font-size: 1.5rem;
+        margin-bottom: 0.8rem;
+        color: var(--accent);
+      }
+
+      h4 {
+        font-size: 1.2rem;
+        margin-bottom: 0.6rem;
+      }
+
+      p {
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 2rem;
+        margin-bottom: 1rem;
+      }
+
+      li {
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+      }
+
+      .card {
+        background-color: var(--background-card);
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        margin-bottom: 1.5rem;
+      }
+
+      .two-columns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+      }
+
+      .column {
+        flex: 1;
+        min-width: 300px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      table th {
+        background-color: var(--primary);
+        color: var(--text);
+        padding: 0.8rem;
+        text-align: left;
+      }
+
+      table td {
+        background-color: var(--background-light);
+        padding: 0.8rem;
+        border-bottom: 1px solid var(--background-card);
+      }
+
+      .controls {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        display: flex;
+        gap: 1rem;
+        z-index: 100;
+      }
+
+      button {
+        background-color: var(--primary);
+        color: var(--text);
+        border: none;
+        border-radius: 4px;
+        padding: 0.8rem 1.5rem;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: var(--primary-light);
+      }
+
+      .menu {
+        position: fixed;
+        top: 1rem;
+        right: 2rem;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 10;
+      }
+
+      .menu-button {
+        background-color: var(--background-light);
+        background-color: transparent;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        border: 1px solid var(--primary);
+      }
+
+      .menu-button:hover {
+        background-color: var(--primary);
+      }
+
+      .progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background-color: var(--accent);
+        z-index: 50;
+        transition: width 0.3s ease;
+      }
+
+      .highlight {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+      }
+
+      .badge-primary {
+        background-color: var(--primary);
+        color: var(--text);
+      }
+
+      .badge-success {
+        background-color: var(--success);
+        color: var(--background);
+      }
+
+      .badge-warning {
+        background-color: var(--warning);
+        color: var(--background);
+      }
+
+      .img-container {
+        text-align: center;
+        margin: 1.5rem 0;
+      }
+
+      .img-fluid {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+      }
+
+      .timeline {
+        position: relative;
+        margin: 2rem 0;
+      }
+
+      .timeline:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 2px;
+        height: 100%;
+        background-color: var(--primary-light);
+      }
+
+      .timeline-item {
+        margin-left: 1.5rem;
+        position: relative;
+        padding: 1.5rem;
+        background-color: var(--background-light);
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+      }
+
+      .timeline-item:before {
+        content: "";
+        position: absolute;
+        top: 1.5rem;
+        left: -1.5rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background-color: var(--accent);
+      }
+
+      .icon-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        margin: 0 auto 1.5rem;
+      }
+
+      .icon {
+        width: 40px;
+        height: 40px;
+        fill: var(--text);
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+      }
+
+      .feature-card {
+        background-color: var(--background-light);
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .feature-icon {
+        margin-bottom: 1rem;
+        color: var(--accent);
+        font-size: 2rem;
+      }
+
+      .chart-container {
+        height: 300px;
+        margin: 2rem 0;
+      }
+
+      @media (max-width: 768px) {
+        .slide-content {
+          padding: 0.5rem;
+        }
+
+        .two-columns {
+          flex-direction: column;
+        }
+
+        .column {
+          width: 100%;
+        }
+
+        .slide-title {
+          font-size: 1.8rem;
+        }
+
+        h2 {
+          font-size: 1.6rem;
+        }
+
+        h3 {
+          font-size: 1.4rem;
+        }
+
+        .controls {
+          bottom: 1rem;
+          right: 1rem;
+        }
+      }
+
+      /* Title slide specific styles */
+      .title-slide {
+        background: linear-gradient(
+          to right,
+          var(--background),
+          var(--primary),
+          var(--background)
+        );
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .title-slide .slide-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        max-width: 800px;
+      }
+
+      .main-title {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        font-size: 1.5rem;
+        margin-bottom: 3rem;
+        color: var(--accent);
+      }
+
+      .date {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        margin-top: 3rem;
+      }
+
+      /* Add animation for slide elements */
+      .fade-in {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.8s ease, transform 0.8s ease;
+      }
+
+      .active .fade-in {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .fade-in-1 {
+        transition-delay: 0.2s;
+      }
+      .fade-in-2 {
+        transition-delay: 0.4s;
+      }
+      .fade-in-3 {
+        transition-delay: 0.6s;
+      }
+      .fade-in-4 {
+        transition-delay: 0.8s;
+      }
+      .fade-in-5 {
+        transition-delay: 1s;
+      }
+
+      /* TOC with hover effects */
+      .toc-list {
+        list-style-type: none;
+        margin-left: 0;
+      }
+
+      .toc-item {
+        padding: 0.8rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+      }
+
+      .toc-item:hover {
+        background-color: var(--background-light);
+      }
+
+      .toc-item.active {
+        background-color: var(--primary);
+      }
+
+      .toc-number {
+        display: inline-block;
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        text-align: center;
+        border-radius: 50%;
+        background-color: var(--primary);
+        margin-right: 1rem;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      /* Comparison tables */
+      .comparison-table th:first-child,
+      .comparison-table td:first-child {
+        font-weight: bold;
+      }
+
+      .comparison-table .better {
+        color: var(--success);
+      }
+
+      .comparison-table .worse {
+        color: var(--danger);
+      }
+
+      /* Process steps */
+      .process-steps {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin: 2rem 0;
+      }
+
+      .process-step {
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+        padding: 1rem;
+        position: relative;
+      }
+
+      .process-step:not(:last-child):after {
+        content: "→";
+        position: absolute;
+        right: -10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        color: var(--primary);
+      }
+
+      .step-number {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        margin: 0 auto 1rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+
+      .step-title {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+
+      /* CTA styles */
+      .cta-section {
+        background-color: var(--primary);
+        padding: 2rem;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .cta-title {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .cta-button {
+        background-color: var(--accent);
+        color: var(--background);
+        padding: 1rem 2rem;
+        border-radius: 4px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        display: inline-block;
+        margin-top: 1rem;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+      }
+
+      .cta-button:hover {
+        transform: scale(1.05);
+      }
+
+      .contact-info {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .contact-icon {
+        font-size: 1.2rem;
+        color: var(--accent);
+      }
+
+      /* Rating stars for KPI importance */
+      .stars {
+        color: var(--warning);
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menu">
+      <button class="menu-button" id="menuToggle">目次</button>
+      <button class="menu-button" onclick="toggleFullScreen()">全画面</button>
+    </div>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="presentation" id="presentation">
+      <!-- Slide 1: Title -->
+      <section class="slide title-slide" id="slide-1">
+        <div class="slide-content">
+          <h1 class="main-title fade-in fade-in-1">
+            複数台AMRによる工場自動化
+          </h1>
+          <h2 class="subtitle fade-in fade-in-2">戦略的導入ガイド</h2>
+          <div class="date fade-in fade-in-4">2025年3月5日</div>
+        </div>
+      </section>
+
+      <!-- Slide 2: Executive Summary -->
+      <section class="slide" id="slide-2">
+        <div class="slide-header">
+          <h2 class="slide-title">エグゼクティブサマリー</h2>
+          <span class="slide-number">2 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="card fade-in fade-in-1">
+            <p>
+              製造業界における人手不足の深刻化と生産性向上への要求に応える解決策として、自律走行搬送ロボット（AMR）を活用した工場自動化が注目されています。
+            </p>
+            <p>
+              従来のAGVと異なり、<span class="highlight"
+                >AMRは固定経路に依存せず、周囲環境を認識して自律的に最適ルートを選択できる柔軟性</span
+              >を持ちます。
+            </p>
+          </div>
+
+          <div class="two-columns">
+            <div class="column card fade-in fade-in-2">
+              <h3>市場動向</h3>
+              <p>
+                2026年のAGV/AMR世界市場規模は2022年の2倍超となる<span
+                  class="highlight"
+                  >9,087億円</span
+                >に到達予測
+              </p>
+              <p>人手不足・自動化ニーズの高まりを背景に拡大傾向が継続</p>
+            </div>
+
+            <div class="column card fade-in fade-in-3">
+              <h3>主要成果</h3>
+              <ul>
+                <li>人件費削減: 搬送作業の自動化</li>
+                <li>生産性向上: 24時間稼働による生産能力の拡大</li>
+                <li>品質向上: ヒューマンエラーの排除</li>
+                <li>柔軟性向上: レイアウト変更や生産計画変更への迅速対応</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3: Contents/Agenda -->
+      <section class="slide" id="slide-3">
+        <div class="slide-header">
+          <h2 class="slide-title">目次</h2>
+          <span class="slide-number">3 / 13</span>
+        </div>
+        <div class="slide-content">
+          <ul class="toc-list">
+            <li class="toc-item fade-in fade-in-1" onclick="goToSlide(4)">
+              <span class="toc-number">1</span>AMRの基本と競争優位性
+            </li>
+            <li class="toc-item fade-in fade-in-1" onclick="goToSlide(5)">
+              <span class="toc-number">2</span>AMR技術の基盤
+            </li>
+            <li class="toc-item fade-in fade-in-2" onclick="goToSlide(6)">
+              <span class="toc-number">3</span>工場自動化における活用領域と効果
+            </li>
+            <li class="toc-item fade-in fade-in-2" onclick="goToSlide(7)">
+              <span class="toc-number">4</span>複数台AMR導入の成功事例
+            </li>
+            <li class="toc-item fade-in fade-in-3" onclick="goToSlide(8)">
+              <span class="toc-number">5</span>複数台AMRの統合管理技術
+            </li>
+            <li class="toc-item fade-in fade-in-3" onclick="goToSlide(9)">
+              <span class="toc-number">6</span>導入戦略と課題対策
+            </li>
+            <li class="toc-item fade-in fade-in-4" onclick="goToSlide(10)">
+              <span class="toc-number">7</span>持続可能な運用管理フレームワーク
+            </li>
+            <li class="toc-item fade-in fade-in-4" onclick="goToSlide(11)">
+              <span class="toc-number">8</span>未来展望と投資価値
+            </li>
+            <li class="toc-item fade-in fade-in-5" onclick="goToSlide(12)">
+              <span class="toc-number">9</span>アクションプラン：次のステップ
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Slide 4: AMR Basics and Competitive Edge -->
+      <section class="slide" id="slide-4">
+        <div class="slide-header">
+          <h2 class="slide-title">AMRの基本と競争優位性</h2>
+          <span class="slide-number">4 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="card fade-in fade-in-1">
+            <h3>AMRとは</h3>
+            <p>
+              <strong>自律走行搬送ロボット (Autonomous Mobile Robot)</strong> -
+              周囲環境を認識し、自律的に最適ルートを選択できる次世代の搬送ロボット
+            </p>
+          </div>
+
+          <h3 class="fade-in fade-in-2">AMR vs AGV：競争優位性の比較</h3>
+          <table class="comparison-table fade-in fade-in-2">
+            <thead>
+              <tr>
+                <th>評価項目</th>
+                <th>AGV（無人搬送車）</th>
+                <th>AMR（自律走行搬送ロボット）</th>
+                <th>AMRの優位性</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>走行方式</td>
+                <td>磁気テープ・レールなどの誘導体に沿って走行</td>
+                <td>センサー・AIを活用して自律的に走行</td>
+                <td class="better">高い環境適応性</td>
+              </tr>
+              <tr>
+                <td>導入準備</td>
+                <td>誘導体設置や経路ティーチングが必要</td>
+                <td>環境地図の作成のみで導入可能</td>
+                <td class="better">迅速な導入</td>
+              </tr>
+              <tr>
+                <td>ルート変更</td>
+                <td>柔軟な対応が困難</td>
+                <td>人や障害物を回避し、柔軟にルート変更可能</td>
+                <td class="better">運用柔軟性</td>
+              </tr>
+              <tr>
+                <td>初期コスト</td>
+                <td>比較的安価</td>
+                <td>比較的高価</td>
+                <td class="worse">AGVが優位</td>
+              </tr>
+              <tr>
+                <td>人との協働</td>
+                <td>協働作業が困難</td>
+                <td>協働作業が可能</td>
+                <td class="better">高い安全性</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Slide 5: AMR Technology Foundation -->
+      <section class="slide" id="slide-5">
+        <div class="slide-header">
+          <h2 class="slide-title">AMR技術の基盤</h2>
+          <span class="slide-number">5 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="two-columns">
+            <div class="column fade-in fade-in-1">
+              <h3>多様なAMRタイプとその用途</h3>
+              <div class="feature-grid">
+                <div class="feature-card">
+                  <div class="feature-icon">🚚</div>
+                  <h4>基礎型AMR</h4>
+                  <p>汎用性の高い標準モデル</p>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-icon">🔼</div>
+                  <h4>昇降式AMR</h4>
+                  <p>異なる高さの棚への対応</p>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-icon">🔄</div>
+                  <h4>牽引用AMR</h4>
+                  <p>カート・台車の牽引特化型</p>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-icon">🏗️</div>
+                  <h4>フォークリフトAMR</h4>
+                  <p>パレット対応型</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="column fade-in fade-in-2">
+              <h3>核心技術</h3>
+              <div class="card">
+                <h4>1. センシング技術</h4>
+                <ul>
+                  <li>LiDAR（レーザーセンサー）</li>
+                  <li>3Dカメラ</li>
+                  <li>テクスチャナビゲーション</li>
+                </ul>
+              </div>
+              <div class="card">
+                <h4>2. SLAM技術</h4>
+                <p>
+                  <strong>S</strong>imultaneous <strong>L</strong>ocalization
+                  <strong>A</strong>nd <strong>M</strong>apping
+                </p>
+                <p>リアルタイムでの自己位置推定と環境マップ作成</p>
+              </div>
+              <div class="card">
+                <h4>3. ナビゲーションシステム</h4>
+                <ul>
+                  <li>最適ルート探索アルゴリズム</li>
+                  <li>動的障害物回避機能</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: Utilization Areas and Effects in Factory Automation -->
+      <section class="slide" id="slide-6">
+        <div class="slide-header">
+          <h2 class="slide-title">工場自動化における活用領域と効果</h2>
+          <span class="slide-number">6 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="two-columns">
+            <div class="column fade-in fade-in-1">
+              <h3>主要活用領域</h3>
+              <div class="card">
+                <h4>工程間搬送の自動化</h4>
+                <p>
+                  生産ライン間の部品・製品搬送を自動化し、人的リソースを削減
+                </p>
+              </div>
+              <div class="card">
+                <h4>ピッキング業務効率化</h4>
+                <p>作業者追従による移動距離削減と作業効率の向上</p>
+              </div>
+              <div class="card">
+                <h4>在庫管理の自動化</h4>
+                <p>棚卸し機能搭載によるリアルタイム在庫把握と精度向上</p>
+              </div>
+              <div class="card">
+                <h4>危険作業の代替</h4>
+                <p>有害物質・重量物の搬送自動化による安全性向上</p>
+              </div>
+            </div>
+
+            <div class="column fade-in fade-in-2">
+              <h3>定量的効果</h3>
+              <div class="card">
+                <h4>
+                  人件費削減 <span class="badge badge-success">30%〜50%</span>
+                </h4>
+                <p>搬送作業の自動化による人的リソース最適配分</p>
+              </div>
+              <div class="card">
+                <h4>
+                  生産性向上 <span class="badge badge-success">20%〜40%</span>
+                </h4>
+                <p>24時間稼働による生産能力の拡大</p>
+              </div>
+              <div class="card">
+                <h4>
+                  品質向上
+                  <span class="badge badge-success">不良率低減10%〜</span>
+                </h4>
+                <p>ヒューマンエラーの排除による品質安定化</p>
+              </div>
+              <div class="card">
+                <h4>
+                  柔軟性向上
+                  <span class="badge badge-success">レイアウト変更60%速く</span>
+                </h4>
+                <p>レイアウト変更や生産計画変更への迅速対応</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card fade-in fade-in-3">
+            <h3>定性的効果</h3>
+            <div class="two-columns">
+              <div class="column">
+                <ul>
+                  <li>
+                    <strong>従業員満足度向上</strong>:
+                    単調作業からの解放による高付加価値業務への転換
+                  </li>
+                  <li>
+                    <strong>安全性向上</strong>:
+                    危険作業の自動化による労働災害リスク低減
+                  </li>
+                </ul>
+              </div>
+              <div class="column">
+                <ul>
+                  <li>
+                    <strong>イノベーション促進</strong>:
+                    自動化による新たな生産プロセスの創出
+                  </li>
+                  <li>
+                    <strong>企業イメージ向上</strong>:
+                    先進技術導入による企業ブランド力強化
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 7: Success Cases of Multiple AMR Implementation -->
+      <section class="slide" id="slide-7">
+        <div class="slide-header">
+          <h2 class="slide-title">複数台AMR導入の成功事例</h2>
+          <span class="slide-number">7 / 13</span>
+        </div>
+        <div class="slide-content">
+          <h3 class="fade-in fade-in-1">国内先進事例</h3>
+          <div class="two-columns">
+            <div class="column fade-in fade-in-1">
+              <div class="card">
+                <h4>オムロン草津工場/綾部工場</h4>
+                <p><span class="badge badge-primary">製造業</span></p>
+                <ul>
+                  <li>
+                    <strong>課題</strong>:
+                    小ロット多品種生産における効率的な搬送
+                  </li>
+                  <li>
+                    <strong>施策</strong>: 既存生産ラインを維持しながらAMR導入
+                  </li>
+                  <li>
+                    <strong>効果</strong>:
+                    小ロット細かい搬送の自動化により生産効率が向上
+                  </li>
+                </ul>
+              </div>
+              <div class="card">
+                <h4>株式会社センチュリーテクノコア</h4>
+                <p><span class="badge badge-primary">アパレル</span></p>
+                <ul>
+                  <li><strong>課題</strong>: 人手不足と国際競争力の低下</li>
+                  <li><strong>施策</strong>: 工場内搬送へのAMR導入</li>
+                  <li>
+                    <strong>効果</strong>: コスト競争力の向上と安定生産の実現
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="column fade-in fade-in-2">
+              <div class="card">
+                <h4>株式会社関通</h4>
+                <p><span class="badge badge-primary">物流</span></p>
+                <ul>
+                  <li>
+                    <strong>課題</strong>:
+                    配送センターでの人手不足と処理能力不足
+                  </li>
+                  <li><strong>施策</strong>: 倉庫内にAMR導入</li>
+                  <li>
+                    <strong>効果</strong>:
+                    <span class="highlight">出荷効率が200%向上</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="card">
+                <h4>三機工業株式会社</h4>
+                <p><span class="badge badge-primary">設備</span></p>
+                <ul>
+                  <li><strong>課題</strong>: 空調性能試験の工数と精度</li>
+                  <li>
+                    <strong>施策</strong>: 自律走行型の風量測定ロボット開発
+                  </li>
+                  <li>
+                    <strong>効果</strong>: 空調性能試験の工数削減と精度向上
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="card fade-in fade-in-3">
+            <h3>成功の共通要因</h3>
+            <div class="two-columns">
+              <div class="column">
+                <ul>
+                  <li>明確な導入目的と期待効果の設定</li>
+                  <li>段階的な導入と効果検証のアプローチ</li>
+                </ul>
+              </div>
+              <div class="column">
+                <ul>
+                  <li>既存システムとの連携を重視</li>
+                  <li>従業員の理解と協力を得るための取り組み</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 8: Multiple AMR Integration Management Technology -->
+      <section class="slide" id="slide-8">
+        <div class="slide-header">
+          <h2 class="slide-title">複数台AMRの統合管理技術</h2>
+          <span class="slide-number">8 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="card fade-in fade-in-1">
+            <h3>群制御技術</h3>
+            <ul>
+              <li>複数台AMRの協調制御による効率最大化</li>
+              <li>衝突回避・渋滞防止・最適ルート選択の同時最適化</li>
+              <li>AI活用による動的環境での高度な協調動作の実現</li>
+            </ul>
+          </div>
+
+          <h3 class="fade-in fade-in-2">フリート管理システム比較</h3>
+          <table class="fade-in fade-in-2">
+            <thead>
+              <tr>
+                <th>システム名</th>
+                <th>提供企業</th>
+                <th>主要機能</th>
+                <th>特徴</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>MiR Fleet</td>
+                <td>MiR</td>
+                <td>複数AMR統合管理、タスク割り当て、ルート最適化</td>
+                <td>直感的UIと高い拡張性</td>
+              </tr>
+              <tr>
+                <td>OTTO Fleet Manager</td>
+                <td>OTTO Motors</td>
+                <td>
+                  タスク割り当て、ルート最適化、速度制限、進入禁止エリア設定
+                </td>
+                <td>重量物搬送に強み</td>
+              </tr>
+              <tr>
+                <td>NECマルチロボットコントローラ</td>
+                <td>NEC</td>
+                <td>複数AMR統合管理、多種多様AMRとの連携、衝突回避</td>
+                <td>異なるメーカーのAMR統合管理が可能</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="card fade-in fade-in-3">
+            <h3>基幹システム連携</h3>
+            <div class="two-columns">
+              <div class="column">
+                <h4>WMS（倉庫管理システム）連携</h4>
+                <p>在庫最適化と搬送効率の向上</p>
+              </div>
+              <div class="column">
+                <h4>MES（製造実行システム）連携</h4>
+                <p>生産計画と連動した搬送計画の最適化</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 9: Implementation Strategy and Challenge Solutions -->
+      <section class="slide" id="slide-9">
+        <div class="slide-header">
+          <h2 class="slide-title">導入戦略と課題対策</h2>
+          <span class="slide-number">9 / 13</span>
+        </div>
+        <div class="slide-content">
+          <h3 class="fade-in fade-in-1">主要課題と対策</h3>
+          <table class="fade-in fade-in-1">
+            <thead>
+              <tr>
+                <th>課題</th>
+                <th>対策アプローチ</th>
+                <th>期待効果</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>高い導入コスト</td>
+                <td>
+                  <ul>
+                    <li>段階的導入計画</li>
+                    <li>ROI重視の投資判断</li>
+                    <li>補助金・助成金の活用</li>
+                  </ul>
+                </td>
+                <td>投資負担の分散と財務リスクの低減</td>
+              </tr>
+              <tr>
+                <td>スペース確保</td>
+                <td>
+                  <ul>
+                    <li>レイアウト最適化</li>
+                    <li>通路幅の適正化</li>
+                    <li>運用ルールの策定</li>
+                  </ul>
+                </td>
+                <td>限られたスペースでの効率的な運用</td>
+              </tr>
+              <tr>
+                <td>安全対策</td>
+                <td>
+                  <ul>
+                    <li>リスクアセスメントの実施</li>
+                    <li>安全設計の徹底</li>
+                    <li>従業員教育の充実</li>
+                  </ul>
+                </td>
+                <td>安全性の確保と事故リスクの低減</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 class="fade-in fade-in-2">導入プロセスフレームワーク</h3>
+          <div class="process-steps fade-in fade-in-2">
+            <div class="process-step">
+              <div class="step-number">1</div>
+              <div class="step-title">目標設定・現状分析</div>
+              <p>1〜2ヶ月</p>
+            </div>
+            <div class="process-step">
+              <div class="step-number">2</div>
+              <div class="step-title">計画・設計</div>
+              <p>2〜3ヶ月</p>
+            </div>
+            <div class="process-step">
+              <div class="step-number">3</div>
+              <div class="step-title">導入・テスト</div>
+              <p>1〜2ヶ月</p>
+            </div>
+            <div class="process-step">
+              <div class="step-number">4</div>
+              <div class="step-title">本格運用・最適化</div>
+              <p>継続的</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 10: Sustainable Operation Management Framework -->
+      <section class="slide" id="slide-10">
+        <div class="slide-header">
+          <h2 class="slide-title">持続可能な運用管理フレームワーク</h2>
+          <span class="slide-number">10 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="card fade-in fade-in-1">
+            <h3>運用管理体制の構築</h3>
+            <ul>
+              <li>
+                <strong>専門チームの編成</strong>:
+                AMR管理者、保守担当者、トラブル対応担当者の配置
+              </li>
+              <li>
+                <strong>教育・トレーニング</strong>:
+                定期的な運用・保守トレーニングの実施
+              </li>
+              <li>
+                <strong>マニュアル整備</strong>:
+                運用・保守・緊急時対応マニュアルの作成と更新
+              </li>
+            </ul>
+          </div>
+
+          <h3 class="fade-in fade-in-2">メンテナンス戦略</h3>
+          <table class="fade-in fade-in-2">
+            <thead>
+              <tr>
+                <th>メンテナンス項目</th>
+                <th>頻度</th>
+                <th>担当</th>
+                <th>重要度</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>日常点検</td>
+                <td>毎日</td>
+                <td>内部スタッフ</td>
+                <td><span class="stars">★★★★★</span></td>
+              </tr>
+              <tr>
+                <td>センサー清掃</td>
+                <td>週1回</td>
+                <td>内部スタッフ</td>
+                <td><span class="stars">★★★★☆</span></td>
+              </tr>
+              <tr>
+                <td>ソフトウェア更新</td>
+                <td>随時</td>
+                <td>メーカー/内部IT</td>
+                <td><span class="stars">★★★★☆</span></td>
+              </tr>
+              <tr>
+                <td>バッテリー交換</td>
+                <td>1〜2年毎</td>
+                <td>メーカー</td>
+                <td><span class="stars">★★★★★</span></td>
+              </tr>
+              <tr>
+                <td>定期オーバーホール</td>
+                <td>年1回</td>
+                <td>メーカー</td>
+                <td><span class="stars">★★★★★</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="card fade-in fade-in-3">
+            <h3>パフォーマンス評価指標（KPI）</h3>
+            <div class="two-columns">
+              <div class="column">
+                <ul>
+                  <li>
+                    <strong>稼働率</strong>:
+                    計画稼働時間に対する実稼働時間の比率（目標：95%以上）
+                  </li>
+                  <li>
+                    <strong>搬送量</strong>:
+                    単位時間あたりの搬送処理数（目標：従来比150%以上）
+                  </li>
+                </ul>
+              </div>
+              <div class="column">
+                <ul>
+                  <li>
+                    <strong>エラー率</strong>:
+                    総搬送回数に対するエラー発生率（目標：1%未満）
+                  </li>
+                  <li>
+                    <strong>充電効率</strong>:
+                    稼働時間と充電時間の比率（目標：充電時間20%以下）
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 11: Future Outlook and Investment Value -->
+      <section class="slide" id="slide-11">
+        <div class="slide-header">
+          <h2 class="slide-title">未来展望と投資価値</h2>
+          <span class="slide-number">11 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="card fade-in fade-in-1">
+            <h3>技術トレンドと将来展望</h3>
+            <div class="two-columns">
+              <div class="column">
+                <ul>
+                  <li>
+                    <strong>AI技術の進化</strong>:
+                    より高度な環境認識と判断能力の獲得
+                  </li>
+                  <li>
+                    <strong>5G普及の影響</strong>:
+                    低遅延・高速通信による制御精度向上
+                  </li>
+                  <li>
+                    <strong>ロボット連携の発展</strong>:
+                    AMRと他のロボットとの連携による複合自動化
+                  </li>
+                </ul>
+              </div>
+              <div class="column">
+                <ul>
+                  <li>
+                    <strong>RaaS（Robot as a Service）モデル</strong>:
+                    初期投資軽減と柔軟なスケーリング
+                  </li>
+                  <li>
+                    <strong>適用領域の拡大</strong>:
+                    製造業から物流、医療、サービス業への展開
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="fade-in fade-in-2">ROI分析フレームワーク</h3>
+          <table class="fade-in fade-in-2">
+            <thead>
+              <tr>
+                <th>導入規模</th>
+                <th>初期投資（概算）</th>
+                <th>回収期間（目安）</th>
+                <th>主な効果</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>小規模<br />(AMR 1〜3台)</td>
+                <td>2,000〜6,000万円</td>
+                <td>2〜3年</td>
+                <td>
+                  <ul>
+                    <li>局所的な搬送自動化</li>
+                    <li>特定工程の効率化</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td>中規模<br />(AMR 4〜10台)</td>
+                <td>6,000〜1.5億円</td>
+                <td>1.5〜2.5年</td>
+                <td>
+                  <ul>
+                    <li>工場内主要搬送の自動化</li>
+                    <li>生産性の大幅向上</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td>大規模<br />(AMR 10台以上)</td>
+                <td>1.5億円〜</td>
+                <td>1〜2年</td>
+                <td>
+                  <ul>
+                    <li>工場全体の搬送自動化</li>
+                    <li>生産システムの変革</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Slide 12: Action Plan: Next Steps -->
+      <section class="slide" id="slide-12">
+        <div class="slide-header">
+          <h2 class="slide-title">アクションプラン：次のステップ</h2>
+          <span class="slide-number">12 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="timeline fade-in fade-in-1">
+            <div class="timeline-item">
+              <h3>短期アクション（1〜3ヶ月）</h3>
+              <ul>
+                <li>
+                  <strong>現状分析</strong>:
+                  現在の搬送プロセスの詳細分析と課題抽出
+                </li>
+                <li><strong>PoC計画</strong>: 小規模な実証実験の計画立案</li>
+                <li>
+                  <strong>メーカー選定</strong>:
+                  要件に最適なAMRメーカー・システムの選定
+                </li>
+              </ul>
+            </div>
+            <div class="timeline-item">
+              <h3>中期アクション（3〜6ヶ月）</h3>
+              <ul>
+                <li>
+                  <strong>PoC実施</strong>: 限定エリアでの実証実験と効果検証
+                </li>
+                <li>
+                  <strong>導入計画策定</strong>: 本格導入に向けた詳細計画の策定
+                </li>
+                <li><strong>投資計画策定</strong>: 段階的な投資計画の立案</li>
+              </ul>
+            </div>
+            <div class="timeline-item">
+              <h3>長期アクション（6ヶ月以降）</h3>
+              <ul>
+                <li>
+                  <strong>段階的導入</strong>: 優先度の高いエリアから順次導入
+                </li>
+                <li>
+                  <strong>運用最適化</strong>: 運用データに基づく継続的な改善
+                </li>
+                <li><strong>拡張計画</strong>: 他プロセスへの展開検討</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card fade-in fade-in-3">
+            <h3>主要AMRプロバイダーリスト</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>メーカー</th>
+                  <th>特徴</th>
+                  <th>主力製品</th>
+                  <th>対応業種</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>オムロン</td>
+                  <td>国内トップシェア、高い信頼性</td>
+                  <td>LD/HD-AMR</td>
+                  <td>製造、物流</td>
+                </tr>
+                <tr>
+                  <td>キーエンス</td>
+                  <td>高精度センシング技術</td>
+                  <td>KXRシリーズ</td>
+                  <td>製造、研究</td>
+                </tr>
+                <tr>
+                  <td>MiR</td>
+                  <td>グローバル展開、豊富な実績</td>
+                  <td>MiR100/250/500/1000</td>
+                  <td>製造、物流、医療</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 13: Contact/CTA -->
+      <section class="slide" id="slide-13">
+        <div class="slide-header">
+          <h2 class="slide-title">お問い合わせ</h2>
+          <span class="slide-number">13 / 13</span>
+        </div>
+        <div class="slide-content">
+          <div class="cta-section fade-in fade-in-1">
+            <h2 class="cta-title">AMR導入のサポートを提供します</h2>
+            <p>
+              製造現場の自動化に関する豊富な経験と専門知識を活かし、貴社の課題解決をサポートいたします。
+            </p>
+            <div class="cta-button">無料相談を予約する</div>
+            <div class="contact-info">
+              <div class="contact-item">
+                <span class="contact-icon">✉️</span>
+                <span>contact@example.com</span>
+              </div>
+              <div class="contact-item">
+                <span class="contact-icon">📞</span>
+                <span>03-1234-5678</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card fade-in fade-in-2">
+            <h3>よくある質問</h3>
+            <div class="two-columns">
+              <div class="column">
+                <h4>Q: AMR導入に必要な期間は？</h4>
+                <p>
+                  A:
+                  規模にもよりますが、計画から本格稼働まで通常3〜6ヶ月かかります。
+                </p>
+
+                <h4>Q: 既存の設備との連携は可能？</h4>
+                <p>
+                  A:
+                  多くの場合、APIやインターフェースを通じて既存システムとの連携が可能です。
+                </p>
+              </div>
+              <div class="column">
+                <h4>Q: どのような工場に向いている？</h4>
+                <p>
+                  A:
+                  搬送作業が多い、少量多品種生産、レイアウト変更が頻繁な工場に特に効果的です。
+                </p>
+
+                <h4>Q: メンテナンスはどうする？</h4>
+                <p>
+                  A:
+                  基本的な点検は社内で可能ですが、定期的なプロフェッショナルメンテナンスを推奨します。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="controls">
+      <button id="prevButton">前へ</button>
+      <button id="nextButton">次へ</button>
+    </div>
+
+    <script>
+      const presentation = document.getElementById("presentation");
+      const slides = document.querySelectorAll(".slide");
+      const prevButton = document.getElementById("prevButton");
+      const nextButton = document.getElementById("nextButton");
+      const progressBar = document.getElementById("progressBar");
+      const menuToggle = document.getElementById("menuToggle");
+      let currentSlide = 0;
+
+      // Initialize the presentation
+      function initPresentation() {
+        goToSlide(1);
+        updateProgressBar();
+      }
+
+      // Go to specific slide
+      function goToSlide(slideNumber) {
+        // Remove active class from all slides
+        slides.forEach((slide) => {
+          slide.classList.remove("active");
+        });
+
+        // Add active class to current slide
+        if (slideNumber >= 1 && slideNumber <= slides.length) {
+          currentSlide = slideNumber - 1;
+          slides[currentSlide].classList.add("active");
+          updateProgressBar();
+        }
+      }
+
+      // Update progress bar
+      function updateProgressBar() {
+        const progress = ((currentSlide + 1) / slides.length) * 100;
+        progressBar.style.width = `${progress}%`;
+      }
+
+      // Event listeners for navigation
+      prevButton.addEventListener("click", () => {
+        if (currentSlide > 0) {
+          goToSlide(currentSlide);
+        }
+      });
+
+      nextButton.addEventListener("click", () => {
+        if (currentSlide < slides.length - 1) {
+          goToSlide(currentSlide + 2);
+        }
+      });
+
+      // Keyboard navigation
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "Space") {
+          if (currentSlide < slides.length - 1) {
+            goToSlide(currentSlide + 2);
+          }
+        } else if (event.key === "ArrowLeft") {
+          if (currentSlide > 0) {
+            goToSlide(currentSlide);
+          }
+        }
+      });
+
+      // Toggle menu
+      menuToggle.addEventListener("click", () => {
+        goToSlide(3); // Go to Table of Contents slide
+      });
+
+      // Full screen toggle
+      function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      }
+
+      // Initialize the presentation
+      initPresentation();
+    </script>
+  </body>
+</html>
